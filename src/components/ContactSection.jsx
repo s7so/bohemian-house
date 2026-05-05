@@ -30,7 +30,7 @@ export default function ContactSection() {
 
             <div className="space-y-6">
               {[
-                { icon: <MapPin size={18} />, label: 'New Cairo, Egypt', sub: 'Serving all of Egypt & GCC' },
+                { icon: <MapPin size={18} />, label: 'New Cairo, Egypt', sub: 'Serving all of Egypt & GCC', branches: ['🇪🇬 New Cairo', '🇸🇦 Riyadh', '🇱🇺 Luxembourg'] },
                 { icon: <Mail size={18} />, label: 'bohemianhouse2030@gmail.com', sub: 'We reply within 24hrs' },
                 { icon: <Phone size={18} />, label: '+20 10 24988931', sub: 'Sun–Thu, 9am–6pm' },
               ].map((item, i) => (
@@ -39,6 +39,13 @@ export default function ContactSection() {
                   <div>
                     <p className="font-inter text-sm font-medium text-[#3D2B1E]">{item.label}</p>
                     <p className="font-inter text-xs text-[#B88D6A]">{item.sub}</p>
+                    {item.branches && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {item.branches.map(b => (
+                          <span key={b} className="font-inter text-xs bg-[#E9DFC6] text-[#7C563D] px-3 py-1 rounded-full">{b}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
