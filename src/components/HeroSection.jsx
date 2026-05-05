@@ -4,9 +4,11 @@ import { useRef, useEffect, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
 
 const images = [
-  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1800&q=80',
-  'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1800&q=80',
-  'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=1800&q=80',
+  'https://media.base44.com/images/public/69f970ba7a3f346d678d9612/c958e7251_image.png',
+  'https://media.base44.com/images/public/69f970ba7a3f346d678d9612/dbb0eeab4_image.png',
+  'https://media.base44.com/images/public/69f970ba7a3f346d678d9612/4f4f9cf58_image.png',
+  'https://media.base44.com/images/public/69f970ba7a3f346d678d9612/1921d3c69_image.png',
+  'https://media.base44.com/images/public/69f970ba7a3f346d678d9612/234d4d9ec_image.png',
 ];
 
 export default function HeroSection() {
