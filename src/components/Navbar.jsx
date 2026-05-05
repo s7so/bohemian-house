@@ -22,8 +22,13 @@ export default function Navbar() {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#F5EFE6]/95 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between h-20">
-        <Link to="/" className="font-cormorant text-2xl font-semibold text-[#3D2B1E] tracking-wide">
-          Bohemian House
+        <Link to="/" className="flex items-center">
+          <img
+            src="https://media.base44.com/images/public/69f970ba7a3f346d678d9612/c096bdc86_image.png"
+            alt="Bohemian House"
+            className="h-14 w-auto object-contain"
+            style={{ mixBlendMode: 'multiply' }}
+          />
         </Link>
 
         {/* Desktop links */}
