@@ -6,11 +6,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const booking = body?.data || body || {};
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: 'bohemianhouse2030@gmail.com',
-      from_name: 'Bohemian House Website',
-      subject: `🌿 New Consultation Booking — ${booking.service_type || 'Interior Design'}`,
-      body: `
+    const emailBody = `
 <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #F5EFE6; padding: 40px; border-radius: 12px;">
   <h2 style="color: #3D2B1E; font-size: 28px; margin-bottom: 8px;">New Consultation Request</h2>
   <p style="color: #A05035; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; margin-top: 0;">Bohemian House — Interior Design Studio</p>
@@ -29,14 +25,26 @@ Deno.serve(async (req) => {
   <p style="color: #3D2B1E; font-size: 14px; line-height: 1.7; background: white; padding: 16px; border-radius: 8px; border-left: 3px solid #A05035;">${booking.project_description}</p>
   ` : ''}
   <hr style="border: none; border-top: 1px solid #E9DFC6; margin: 24px 0;" />
-  <p style="color: #B88D6A; font-size: 12px; text-align: center;">Bohemian House · New Cairo, Egypt · bohemianhouse2030@gmail.com</p>
-</div>
-      `
-    });
+  <p style="color: #B88D6A; font-size: 12px; text-align: center;">Bohemian House · New Cairo, Egypt</p>
+</div>`;
 
-    return Response.json({ success: true });
+    // Get all admin users and send to each one
+    const adminUsers = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
+    console.log(`Found ${adminUsers.length} admin users:`, adminUsers.map(u => u.email));
+
+    for (const user of adminUsers) {
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: user.email,
+        from_name: 'Bohemian House Website',
+        subject: `🌿 New Consultation Booking — ${booking.service_type || 'Interior Design'}`,
+        body: emailBody
+      });
+      console.log(`Email sent to: ${user.email}`);
+    }
+
+    return Response.json({ success: true, sent_to: adminUsers.map(u => u.email) });
   } catch (error) {
-    console.error('Error sending booking notification:', error);
+    console.error('Error sending booking notification:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
