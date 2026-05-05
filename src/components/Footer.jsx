@@ -5,7 +5,8 @@ export default function Footer() {
     <footer className="bg-[#2A1E14] text-[#E9DFC6] py-12 px-6">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <div>
-          <img src="https://media.base44.com/images/public/69f970ba7a3f346d678d9612/c096bdc86_image.png" alt="Bohemian House" className="h-20 w-auto object-contain brightness-[10] opacity-90" style={{mixBlendMode: 'screen'}} />
+          <p className="font-cormorant text-2xl font-semibold text-[#F5EFE6] mb-1">Bohemian House</p>
+          <p className="font-inter text-xs text-[#B88D6A]">Eco-Friendly Interior Design · Cairo, Egypt</p>
         </div>
 
         <div className="flex gap-8">
