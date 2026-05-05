@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 const defaultServices = [
-  { id: 'd1', title: 'Interior Design', description: 'Full interior design solutions combining bohemian aesthetics with sustainable materials and eco-certified products.', icon: '🪴' },
+  { id: 'd1', title: 'Interior Design & Renovation', description: 'Comprehensive design and renovation solutions — from concept to completion — blending bohemian elegance with sustainable, eco-certified materials for spaces that truly inspire.', icon: '🪴' },
   { id: 'd2', title: 'Space Planning', description: 'Thoughtful space planning that maximizes flow, functionality, and natural harmony within your home or office.', icon: '📐' },
   { id: 'd3', title: 'Furniture Curation', description: 'Hand-selected pieces from local artisans and ethical brands that tell a story and stand the test of time.', icon: '🛋️' },
   { id: 'd4', title: 'Color Consultation', description: 'Earth-inspired palettes drawn from nature — terracotta, sage, sand, and clay — that breathe life into every space.', icon: '🎨' },
