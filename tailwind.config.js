@@ -6,6 +6,7 @@ module.exports = {
   	extend: {
       fontFamily: {
         cormorant: ['Cormorant Garamond', 'serif'],
+        playfair: ['Playfair Display', 'serif'],
         inter: ['Inter', 'sans-serif'],
       },
   		borderRadius: {

@@ -80,7 +80,7 @@ export default function HeroSection() {
             initial={{ y: 120, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="font-cormorant text-6xl md:text-8xl lg:text-9xl font-light text-[#F5EFE6] leading-none">
+            className="font-playfair text-6xl md:text-8xl lg:text-9xl font-semibold text-[#F5EFE6] leading-none">
             Where Nature
           </motion.h1>
         </div>
@@ -89,7 +89,7 @@ export default function HeroSection() {
             initial={{ y: 120, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="font-cormorant text-6xl md:text-8xl lg:text-9xl font-light italic text-[#D4956A] leading-none">
+            className="font-playfair text-6xl md:text-8xl lg:text-9xl font-semibold italic text-[#D4956A] leading-none">
             Meets Design
           </motion.h1>
         </div>
