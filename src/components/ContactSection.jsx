@@ -31,8 +31,8 @@ export default function ContactSection() {
             <div className="space-y-6">
               {[
                 { icon: <MapPin size={18} />, label: 'Cairo, Egypt', sub: 'Serving all of Egypt & GCC' },
-                { icon: <Mail size={18} />, label: 'hello@bohemianhouse.com', sub: 'We reply within 24hrs' },
-                { icon: <Phone size={18} />, label: '+20 100 000 0000', sub: 'Sun–Thu, 9am–6pm' },
+                { icon: <Mail size={18} />, label: 'BohemianHouse2030@gmail.com', sub: 'We reply within 24hrs' },
+                { icon: <Phone size={18} />, label: '+20 10 24988931', sub: 'Sun–Thu, 9am–6pm' },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-[#E9DFC6] flex items-center justify-center text-[#A05035] flex-shrink-0">{item.icon}</div>
