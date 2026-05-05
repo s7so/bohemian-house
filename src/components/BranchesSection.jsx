@@ -51,14 +51,24 @@ export default function BranchesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="bg-white/60 backdrop-blur-sm border border-[#E9DFC6] rounded-3xl p-8 flex flex-col items-center gap-4 hover:shadow-xl hover:shadow-[#A05035]/10 transition-shadow duration-300"
+              className="relative overflow-hidden border border-[#E9DFC6] rounded-3xl p-8 flex flex-col items-center gap-4 hover:shadow-xl hover:shadow-[#A05035]/10 transition-shadow duration-300"
             >
-              <span className="text-5xl">{b.flag}</span>
-              <div className="flex items-center gap-2 text-[#A05035]">
-                <MapPin size={16} />
-                <span className="font-inter text-sm font-medium text-[#3D2B1E]">{b.city}</span>
+              {/* Flag as large background */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                <span className="text-[9rem] opacity-10">{b.flag}</span>
               </div>
-              <p className="font-inter text-xs tracking-widest uppercase text-[#B88D6A]">{b.country}</p>
+              {/* Soft overlay */}
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-3xl" />
+
+              {/* Foreground content */}
+              <div className="relative z-10 flex flex-col items-center gap-4">
+                <span className="text-6xl drop-shadow-md">{b.flag}</span>
+                <div className="flex items-center gap-2 text-[#A05035]">
+                  <MapPin size={16} />
+                  <span className="font-inter text-sm font-medium text-[#3D2B1E]">{b.city}</span>
+                </div>
+                <p className="font-inter text-xs tracking-widest uppercase text-[#B88D6A]">{b.country}</p>
+              </div>
             </motion.div>
           ))}
         </div>
