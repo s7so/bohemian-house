@@ -271,8 +271,16 @@ export default function Admin() {
                         className="flex items-center gap-1 text-xs text-[#7C563D] hover:text-[#A05035] font-inter transition-colors">
                         <Pencil size={12} /> Edit
                       </button>
+                      <button
+                        onClick={async () => {
+                          const updated = await base44.entities.Project.update(project.id, { featured: !project.featured });
+                          setProjects(prev => prev.map(p => p.id === project.id ? updated : p));
+                        }}
+                        className={`flex items-center gap-1 text-xs font-inter transition-colors ${ project.featured ? 'text-[#A05035] hover:text-[#7C563D]' : 'text-[#B88D6A] hover:text-[#A05035]' }`}>
+                        {project.featured ? '★ On Home' : '☆ Add to Home'}
+                      </button>
                       <button onClick={() => deleteProject(project.id)}
-                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-inter transition-colors">
+                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-inter transition-colors ml-auto">
                         <Trash2 size={12} /> Delete
                       </button>
                     </div>
