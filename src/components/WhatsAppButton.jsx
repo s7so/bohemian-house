@@ -1,5 +1,5 @@
 export default function WhatsAppButton() {
-  const phone = '201000000000'; // Replace with real number
+  const phone = '201024988931';
   const message = encodeURIComponent("Hello! I'm interested in your interior design services. Could you tell me more about how we can work together?");
   const url = `https://wa.me/${phone}?text=${message}`;
 
