@@ -55,7 +55,7 @@ export default function TestimonialsSection() {
         </div>
 
         {/* Testimonial slider */}
-        <div className="relative min-h-[280px] flex items-center">
+        <div className="relative overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div key={current}
               custom={direction}
@@ -64,7 +64,7 @@ export default function TestimonialsSection() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 flex flex-col items-center text-center px-8">
+              className="flex flex-col items-center text-center px-4 md:px-8 pb-4">
 
               {/* Stars */}
               <div className="flex gap-1.5 mb-8">
@@ -76,7 +76,7 @@ export default function TestimonialsSection() {
               </div>
 
               {/* Quote */}
-              <p className="font-cormorant text-2xl md:text-3xl text-[#E9DFC6] leading-relaxed italic mb-10">
+              <p className="font-cormorant text-xl md:text-3xl text-[#E9DFC6] leading-relaxed italic mb-10">
                 "{displayed[current]?.quote}"
               </p>
 
