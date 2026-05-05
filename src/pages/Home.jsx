@@ -6,6 +6,7 @@ import VideosSection from '../components/VideosSection';
 import StatsSection from '../components/StatsSection';
 import TestimonialsSection from '../components/TestimonialsSection';
 import ContactSection from '../components/ContactSection';
+import BranchesSection from '../components/BranchesSection';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
 
@@ -19,6 +20,7 @@ export default function Home() {
       <VideosSection />
       <StatsSection />
       <TestimonialsSection />
+      <BranchesSection />
       <ContactSection />
       <Footer />
       <WhatsAppButton />
