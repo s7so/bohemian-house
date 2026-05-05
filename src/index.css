@@ -85,6 +85,6 @@
   }
 
   body {
-    @apply bg-background text-foreground font-cormorant;
+    @apply bg-background text-foreground;
   }
 }
