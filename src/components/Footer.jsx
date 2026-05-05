@@ -9,8 +9,8 @@ export default function Footer() {
           <img
             src="https://media.base44.com/images/public/69f970ba7a3f346d678d9612/c096bdc86_image.png"
             alt="Bohemian House"
-            className="h-28 w-auto object-contain opacity-90"
-            style={{ mixBlendMode: 'screen' }}
+            className="h-24 w-auto object-contain"
+            style={{ filter: 'brightness(0) invert(1)', opacity: 0.65 }}
           />
         </div>
 
