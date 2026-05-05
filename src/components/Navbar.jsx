@@ -21,9 +21,9 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#F5EFE6]/95 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#F5EFE6]/95 backdrop-blur-md shadow-sm' : 'bg-gradient-to-b from-[#1A110A]/60 to-transparent md:bg-none md:from-transparent'}`}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between h-20">
-        <Link to="/" className="font-cormorant text-2xl font-semibold text-[#3D2B1E] tracking-wide">
+        <Link to="/" className={`font-cormorant text-2xl font-semibold tracking-wide transition-colors ${scrolled ? 'text-[#3D2B1E]' : 'text-[#F5EFE6] md:text-[#3D2B1E]'}`}>
           Bohemian House
         </Link>
 
@@ -42,7 +42,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile menu button */}
-        <button className="md:hidden text-[#3D2B1E]" onClick={() => setDrawerOpen(true)}>
+        <button className={`md:hidden transition-colors ${scrolled ? 'text-[#3D2B1E]' : 'text-[#F5EFE6]'}`} onClick={() => setDrawerOpen(true)}>
           <Menu size={24} />
         </button>
       </div>
