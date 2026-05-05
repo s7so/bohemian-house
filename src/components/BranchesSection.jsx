@@ -53,7 +53,6 @@ export default function BranchesSection() {
             >
               {/* Flag & location */}
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-4xl">{branch.flag}</span>
                 <div>
                   <p className="font-cormorant text-2xl font-semibold text-[#3D2B1E] group-hover:text-[#A05035] transition-colors duration-300">
                     {branch.city}
