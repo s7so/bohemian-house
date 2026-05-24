@@ -1,14 +1,6 @@
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
+import { dataService } from './dataService';
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
-
-//Create a client with authentication required
-export const base44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
-});
+// Re-export dataService as base44 for backward compatibility.
+// All components that import { base44 } from '@/api/base44Client'
+// will now use Firebase Firestore instead of the deleted Base44 backend.
+export const base44 = dataService;

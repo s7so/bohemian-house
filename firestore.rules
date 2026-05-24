@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Projects, services, testimonials: anyone can read
+    match /projects/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /services/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /testimonials/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Contact messages: anyone can create, admin can read/update/delete
+    match /messages/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
