@@ -8,7 +8,7 @@ A React SPA for Bohemian House, an eco-friendly interior design studio based in 
 
 - React 18 + Vite
 - Tailwind CSS + Framer Motion
-- Firebase (Auth + Firestore + Storage)
+- Firebase (Auth + Firestore)
 - GitHub Pages (auto-deploy via GitHub Actions)
 
 ## Getting Started
@@ -26,9 +26,8 @@ npm install
 1. Go to [Firebase Console](https://console.firebase.google.com/) → Create a project
 2. Enable **Authentication** → Sign-in method → **Email/Password** → Enable
 3. Enable **Firestore Database** (start in test mode, then deploy `firestore.rules`)
-4. Enable **Storage** (start in test mode, then deploy `storage.rules`)
-5. Go to Project Settings → General → Add a **Web app** → copy the config
-6. Copy `.env.example` to `.env` and fill in your Firebase config:
+4. Go to Project Settings → General → Add a **Web app** → copy the config
+5. Copy `.env.example` to `.env` and fill in your Firebase config:
 
 ```bash
 cp .env.example .env
@@ -67,7 +66,7 @@ Features:
 
 - Admin authentication via Firebase Auth (Email/Password)
 - Firestore rules: public read, authenticated write only
-- Storage rules: authenticated uploads only (images < 5MB)
+- Image URLs instead of file upload (no paid Storage plan needed)
 - Password reset via email
 
 ## Deployment

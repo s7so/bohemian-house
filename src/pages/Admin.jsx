@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Upload, Lock, Mail, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Lock, Mail, Loader2, AlertCircle, RefreshCw, Link2 } from 'lucide-react';
 
 const SITE_BASE = import.meta.env.BASE_URL || '/';
 
@@ -66,7 +66,6 @@ export default function Admin() {
   const [showForm, setShowForm] = useState(false);
   const [projectForm, setProjectForm] = useState(EMPTY_PROJECT);
   const [editingId, setEditingId] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [toasts, setToasts] = useState([]);
@@ -167,29 +166,6 @@ export default function Admin() {
       setTestimonials([]);
     } catch {
       addToast('Failed to log out. Try again.', 'error');
-    }
-  };
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      addToast('Image must be under 5MB.', 'error');
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      addToast('Please select an image file.', 'error');
-      return;
-    }
-    setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setProjectForm(f => ({ ...f, cover_image: file_url }));
-      addToast('Image uploaded.');
-    } catch {
-      addToast('Failed to upload image. Try again.', 'error');
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -519,17 +495,21 @@ export default function Admin() {
                     className="w-full border border-[#E9DFC6] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#A05035] resize-none bg-[#FAFAF8]" />
                 </div>
 
-                {/* Image upload */}
+                {/* Image URL */}
                 <div className="mb-5">
-                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Cover Image</label>
-                  <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors ${uploading ? 'border-[#A05035] bg-[#A05035]/5' : 'border-[#E9DFC6] hover:border-[#A05035] bg-[#FAFAF8]'}`}>
-                    {uploading ? <Loader2 size={18} className="text-[#A05035] animate-spin" /> : <Upload size={18} className="text-[#A05035]" />}
-                    <span className="font-inter text-sm text-[#7C563D]">{uploading ? 'Uploading...' : 'Click to upload image (max 5MB)'}</span>
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
-                  </label>
+                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Cover Image URL</label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-2 border border-[#E9DFC6] rounded-xl px-4 py-2.5 bg-[#FAFAF8] focus-within:border-[#A05035]">
+                      <Link2 size={16} className="text-[#A05035] flex-shrink-0" />
+                      <input value={projectForm.cover_image} onChange={e => setProjectForm(f => ({ ...f, cover_image: e.target.value }))}
+                        placeholder="https://images.unsplash.com/photo-..."
+                        className="w-full text-sm focus:outline-none bg-transparent" />
+                    </div>
+                  </div>
+                  <p className="font-inter text-xs text-[#B88D6A] mt-1.5">Paste an image URL from Unsplash, Imgur, or any image host</p>
                   {projectForm.cover_image && (
                     <div className="mt-3 relative inline-block">
-                      <img src={projectForm.cover_image} alt="" className="h-28 rounded-xl object-cover border border-[#E9DFC6]" />
+                      <img src={projectForm.cover_image} alt="" className="h-28 rounded-xl object-cover border border-[#E9DFC6]" onError={e => { e.target.style.display = 'none'; }} />
                       <button onClick={() => setProjectForm(f => ({ ...f, cover_image: '' }))}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600">
                         <X size={11} />
