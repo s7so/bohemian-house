@@ -1,39 +1,71 @@
-**Welcome to your Base44 project** 
+# Bohemian House — Eco-Friendly Interior Design
 
-**About**
+A React SPA for Bohemian House, an eco-friendly interior design studio based in Cairo.
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+**Live site:** [https://s7so.github.io/bohemian-house/](https://s7so.github.io/bohemian-house/)
 
-This project contains everything you need to run your app locally.
+## Tech Stack
 
-**Edit the code in your local development environment**
+- React 18 + Vite
+- Tailwind CSS + Framer Motion
+- Firebase (Firestore + Storage)
+- GitHub Pages (auto-deploy via GitHub Actions)
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+## Getting Started
 
-**Prerequisites:** 
+### 1. Clone & install
 
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
-
-```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+```bash
+git clone https://github.com/s7so/bohemian-house.git
+cd bohemian-house
+npm install
 ```
 
-Run the app: `npm run dev`
+### 2. Set up Firebase
 
-**Publish your changes**
+1. Go to [Firebase Console](https://console.firebase.google.com/) → Create a project
+2. Enable **Firestore Database** (start in test mode)
+3. Enable **Storage** (start in test mode)
+4. Go to Project Settings → General → Add a **Web app** → copy the config
+5. Copy `.env.example` to `.env` and fill in your Firebase config:
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+```bash
+cp .env.example .env
+```
 
-**Docs & Support**
+### 3. Seed initial data
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+```bash
+node scripts/seed-firestore.js
+```
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+### 4. Run locally
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173)
+
+## Admin Dashboard
+
+Go to `/admin` to manage:
+- **Projects** — add, edit, delete, mark as featured
+- **Messages** — view contact form submissions, mark as read
+- **Testimonials** — manage client reviews
+
+Password: `bohemian2030`
+
+## Deployment
+
+The site auto-deploys to GitHub Pages on every push to `main`.
+
+To set up deployment for a new fork:
+1. Go to repo **Settings → Pages → Source → GitHub Actions**
+2. Add Firebase secrets to **Settings → Secrets → Actions**:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
