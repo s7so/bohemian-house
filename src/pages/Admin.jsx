@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Lock, Mail, Loader2, AlertCircle, RefreshCw, Link2 } from 'lucide-react';
+import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Lock, Mail, Loader2, AlertCircle, RefreshCw, Link2, Wrench, ArrowUp, ArrowDown } from 'lucide-react';
 
 const SITE_BASE = import.meta.env.BASE_URL || '/';
 
@@ -44,6 +44,9 @@ function ToastContainer({ toasts, onDismiss }) {
 let toastIdCounter = 0;
 
 const EMPTY_PROJECT = { title: '', category: 'Residential', location: '', year: '', description: '', cover_image: '', featured: false };
+const EMPTY_SERVICE = { title: '', description: '', icon: '🪴', order: 0 };
+
+const SERVICE_ICONS = ['🪴', '📐', '🛋️', '🎨', '🌿', '✅', '🏠', '🔨', '💡', '🪵', '🌳', '🏗️'];
 
 export default function Admin() {
   const [user, setUser] = useState(undefined);
@@ -60,6 +63,7 @@ export default function Admin() {
   const [projects, setProjects] = useState([]);
   const [messages, setMessages] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
+  const [services, setServices] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(null);
 
@@ -67,6 +71,11 @@ export default function Admin() {
   const [projectForm, setProjectForm] = useState(EMPTY_PROJECT);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [serviceForm, setServiceForm] = useState(EMPTY_SERVICE);
+  const [editingServiceId, setEditingServiceId] = useState(null);
+  const [savingService, setSavingService] = useState(false);
 
   const [toasts, setToasts] = useState([]);
 
@@ -90,14 +99,16 @@ export default function Admin() {
     setDataLoading(true);
     setDataError(null);
     try {
-      const [p, m, t] = await Promise.all([
+      const [p, m, t, s] = await Promise.all([
         base44.entities.Project.list('-created_date', 100),
         base44.entities.ContactMessage.list('-created_date', 100),
         base44.entities.Testimonial.list('-created_date', 100),
+        base44.entities.Service.list('order', 100),
       ]);
       setProjects(p);
       setMessages(m);
       setTestimonials(t);
+      setServices(s);
     } catch (err) {
       console.error('Failed to load data:', err);
       setDataError('Failed to load data. Check your internet connection and try again.');
@@ -164,6 +175,7 @@ export default function Admin() {
       setProjects([]);
       setMessages([]);
       setTestimonials([]);
+      setServices([]);
     } catch {
       addToast('Failed to log out. Try again.', 'error');
     }
@@ -430,6 +442,7 @@ export default function Admin() {
             { id: 'projects', label: 'Projects', icon: <Folder size={15} />, count: projects.length },
             { id: 'messages', label: 'Messages', icon: <MessageSquare size={15} />, count: newMsgCount, badge: true },
             { id: 'testimonials', label: 'Testimonials', icon: <Star size={15} />, count: testimonials.length },
+            { id: 'services', label: 'Services', icon: <Wrench size={15} />, count: services.length },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-inter text-sm transition-all ${tab === t.id ? 'bg-[#A05035] text-white shadow-sm' : 'text-[#7C563D] hover:bg-[#F0EBE0]'}`}>
@@ -605,6 +618,164 @@ export default function Admin() {
                 </div>
               ))}
               {messages.length === 0 && <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-[#E9DFC6]"><p className="font-cormorant text-2xl text-[#B88D6A]">No messages yet.</p></div>}
+            </div>
+          </div>
+        )}
+
+        {/* ── SERVICES ── */}
+        {tab === 'services' && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-cormorant text-3xl text-[#3D2B1E]">Services</h2>
+              <button onClick={() => { setEditingServiceId(null); setServiceForm({ ...EMPTY_SERVICE, order: services.length + 1 }); setShowServiceForm(true); }}
+                className="flex items-center gap-2 bg-[#A05035] text-white font-inter text-sm px-5 py-2.5 rounded-full hover:bg-[#7C563D] transition-colors shadow-sm">
+                <Plus size={15} /> Add Service
+              </button>
+            </div>
+
+            {showServiceForm && (
+              <div className="bg-white rounded-2xl p-6 border border-[#E9DFC6] mb-6 shadow-md">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="font-cormorant text-2xl text-[#3D2B1E]">{editingServiceId ? 'Edit Service' : 'New Service'}</h3>
+                  <button onClick={() => setShowServiceForm(false)} className="text-[#B88D6A] hover:text-[#3D2B1E]"><X size={20} /></button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Title *</label>
+                    <input value={serviceForm.title} onChange={e => setServiceForm(f => ({ ...f, title: e.target.value }))}
+                      placeholder="e.g. Interior Design & Renovation"
+                      className="w-full border border-[#E9DFC6] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#A05035] bg-[#FAFAF8]" />
+                  </div>
+                  <div>
+                    <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Order</label>
+                    <input type="number" min="1" value={serviceForm.order} onChange={e => setServiceForm(f => ({ ...f, order: parseInt(e.target.value) || 0 }))}
+                      className="w-full border border-[#E9DFC6] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#A05035] bg-[#FAFAF8]" />
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Icon</label>
+                  <div className="flex flex-wrap gap-2">
+                    {SERVICE_ICONS.map(icon => (
+                      <button key={icon} type="button" onClick={() => setServiceForm(f => ({ ...f, icon }))}
+                        className={`text-2xl w-11 h-11 rounded-xl flex items-center justify-center transition-all ${serviceForm.icon === icon ? 'bg-[#A05035]/15 border-2 border-[#A05035] scale-110' : 'bg-[#FAFAF8] border border-[#E9DFC6] hover:border-[#A05035]'}`}>
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mb-5">
+                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Description</label>
+                  <textarea rows={3} value={serviceForm.description} onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Brief description of this service..."
+                    className="w-full border border-[#E9DFC6] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#A05035] resize-none bg-[#FAFAF8]" />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={async () => {
+                    if (!serviceForm.title.trim()) { addToast('Service title is required.', 'error'); return; }
+                    setSavingService(true);
+                    try {
+                      if (editingServiceId) {
+                        const updated = await base44.entities.Service.update(editingServiceId, serviceForm);
+                        setServices(prev => prev.map(s => s.id === editingServiceId ? { ...s, ...updated } : s).sort((a, b) => (a.order || 0) - (b.order || 0)));
+                        addToast('Service updated.');
+                      } else {
+                        const s = await base44.entities.Service.create(serviceForm);
+                        setServices(prev => [...prev, s].sort((a, b) => (a.order || 0) - (b.order || 0)));
+                        addToast('Service created.');
+                      }
+                      setShowServiceForm(false);
+                      setEditingServiceId(null);
+                      setServiceForm(EMPTY_SERVICE);
+                    } catch { addToast('Failed to save service.', 'error'); }
+                    finally { setSavingService(false); }
+                  }} disabled={!serviceForm.title.trim() || savingService}
+                    className="flex items-center gap-2 bg-[#A05035] text-white font-inter text-sm px-6 py-2.5 rounded-full hover:bg-[#7C563D] transition-colors disabled:opacity-40">
+                    {savingService ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                    {editingServiceId ? 'Save Changes' : 'Save Service'}
+                  </button>
+                  <button onClick={() => setShowServiceForm(false)}
+                    className="border border-[#E9DFC6] text-[#7C563D] font-inter text-sm px-6 py-2.5 rounded-full hover:bg-[#E9DFC6] transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {services.map((svc, idx) => (
+                <div key={svc.id} className="bg-white rounded-2xl p-5 border border-[#E9DFC6] shadow-sm flex items-center gap-4">
+                  <span className="text-3xl flex-shrink-0">{svc.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-cormorant text-xl text-[#3D2B1E] leading-tight">{svc.title}</h3>
+                    <p className="font-inter text-xs text-[#B88D6A] mt-0.5 line-clamp-2">{svc.description}</p>
+                  </div>
+                  <span className="font-inter text-xs text-[#B88D6A] bg-[#F0EBE0] px-2.5 py-1 rounded-full flex-shrink-0">#{svc.order || idx + 1}</span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={async () => {
+                      if (idx === 0) return;
+                      try {
+                        const prev = services[idx - 1];
+                        await Promise.all([
+                          base44.entities.Service.update(svc.id, { order: prev.order || idx }),
+                          base44.entities.Service.update(prev.id, { order: svc.order || idx + 1 }),
+                        ]);
+                        setServices(s => {
+                          const copy = [...s];
+                          [copy[idx - 1], copy[idx]] = [{ ...copy[idx], order: prev.order || idx }, { ...copy[idx - 1], order: svc.order || idx + 1 }];
+                          return copy;
+                        });
+                      } catch { addToast('Failed to reorder.', 'error'); }
+                    }} disabled={idx === 0}
+                      className="p-1.5 rounded-lg text-[#B88D6A] hover:text-[#A05035] hover:bg-[#F0EBE0] transition-colors disabled:opacity-30">
+                      <ArrowUp size={14} />
+                    </button>
+                    <button onClick={async () => {
+                      if (idx === services.length - 1) return;
+                      try {
+                        const next = services[idx + 1];
+                        await Promise.all([
+                          base44.entities.Service.update(svc.id, { order: next.order || idx + 2 }),
+                          base44.entities.Service.update(next.id, { order: svc.order || idx + 1 }),
+                        ]);
+                        setServices(s => {
+                          const copy = [...s];
+                          [copy[idx], copy[idx + 1]] = [{ ...copy[idx + 1], order: svc.order || idx + 1 }, { ...copy[idx], order: next.order || idx + 2 }];
+                          return copy;
+                        });
+                      } catch { addToast('Failed to reorder.', 'error'); }
+                    }} disabled={idx === services.length - 1}
+                      className="p-1.5 rounded-lg text-[#B88D6A] hover:text-[#A05035] hover:bg-[#F0EBE0] transition-colors disabled:opacity-30">
+                      <ArrowDown size={14} />
+                    </button>
+                  </div>
+                  <button onClick={() => {
+                    setEditingServiceId(svc.id);
+                    setServiceForm({ title: svc.title, description: svc.description || '', icon: svc.icon || '🪴', order: svc.order || idx + 1 });
+                    setShowServiceForm(true);
+                  }} className="flex items-center gap-1 text-xs text-[#7C563D] hover:text-[#A05035] font-inter transition-colors flex-shrink-0">
+                    <Pencil size={12} /> Edit
+                  </button>
+                  <button onClick={async () => {
+                    if (!confirm('Delete this service?')) return;
+                    try {
+                      await base44.entities.Service.delete(svc.id);
+                      setServices(prev => prev.filter(s => s.id !== svc.id));
+                      addToast('Service deleted.');
+                    } catch { addToast('Failed to delete service.', 'error'); }
+                  }} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-inter transition-colors flex-shrink-0">
+                    <Trash2 size={12} /> Delete
+                  </button>
+                </div>
+              ))}
+              {services.length === 0 && !showServiceForm && (
+                <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-[#E9DFC6]">
+                  <p className="font-cormorant text-2xl text-[#B88D6A] mb-4">No services yet</p>
+                  <button onClick={() => { setEditingServiceId(null); setServiceForm({ ...EMPTY_SERVICE, order: 1 }); setShowServiceForm(true); }}
+                    className="bg-[#A05035] text-white font-inter text-sm px-6 py-2.5 rounded-full hover:bg-[#7C563D] transition-colors">
+                    Add Your First Service
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
