@@ -7,9 +7,22 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Lock, Mail, Loader2, AlertCircle, RefreshCw, Link2, Wrench, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Lock, Mail, Loader2, AlertCircle, RefreshCw, Upload, Wrench, ArrowUp, ArrowDown } from 'lucide-react';
 
 const SITE_BASE = import.meta.env.BASE_URL || '/';
+const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
+const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'bohemian_unsigned';
+
+async function uploadToCloudinary(file) {
+  if (!CLOUDINARY_CLOUD) throw new Error('Cloudinary not configured');
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Upload failed');
+  const data = await res.json();
+  return data.secure_url;
+}
 
 function Toast({ toast, onDismiss }) {
   const bg = toast.type === 'error'
@@ -71,6 +84,7 @@ export default function Admin() {
   const [projectForm, setProjectForm] = useState(EMPTY_PROJECT);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [serviceForm, setServiceForm] = useState(EMPTY_SERVICE);
@@ -508,18 +522,26 @@ export default function Admin() {
                     className="w-full border border-[#E9DFC6] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#A05035] resize-none bg-[#FAFAF8]" />
                 </div>
 
-                {/* Image URL */}
+                {/* Image upload */}
                 <div className="mb-5">
-                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Cover Image URL</label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center gap-2 border border-[#E9DFC6] rounded-xl px-4 py-2.5 bg-[#FAFAF8] focus-within:border-[#A05035]">
-                      <Link2 size={16} className="text-[#A05035] flex-shrink-0" />
-                      <input value={projectForm.cover_image} onChange={e => setProjectForm(f => ({ ...f, cover_image: e.target.value }))}
-                        placeholder="https://images.unsplash.com/photo-..."
-                        className="w-full text-sm focus:outline-none bg-transparent" />
-                    </div>
-                  </div>
-                  <p className="font-inter text-xs text-[#B88D6A] mt-1.5">Paste an image URL from Unsplash, Imgur, or any image host</p>
+                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Cover Image</label>
+                  <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors ${uploading ? 'border-[#A05035] bg-[#A05035]/5' : 'border-[#E9DFC6] hover:border-[#A05035] bg-[#FAFAF8]'}`}>
+                    {uploading ? <Loader2 size={18} className="text-[#A05035] animate-spin" /> : <Upload size={18} className="text-[#A05035]" />}
+                    <span className="font-inter text-sm text-[#7C563D]">{uploading ? 'Uploading...' : 'Click to upload image (max 5MB)'}</span>
+                    <input type="file" accept="image/*" onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { addToast('Image must be under 5MB.', 'error'); return; }
+                      if (!file.type.startsWith('image/')) { addToast('Please select an image file.', 'error'); return; }
+                      setUploading(true);
+                      try {
+                        const url = await uploadToCloudinary(file);
+                        setProjectForm(f => ({ ...f, cover_image: url }));
+                        addToast('Image uploaded.');
+                      } catch { addToast('Failed to upload image. Check Cloudinary config.', 'error'); }
+                      finally { setUploading(false); e.target.value = ''; }
+                    }} className="hidden" disabled={uploading} />
+                  </label>
                   {projectForm.cover_image && (
                     <div className="mt-3 relative inline-block">
                       <img src={projectForm.cover_image} alt="" className="h-28 rounded-xl object-cover border border-[#E9DFC6]" onError={e => { e.target.style.display = 'none'; }} />
