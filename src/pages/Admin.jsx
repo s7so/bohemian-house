@@ -1,56 +1,172 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Upload, Lock } from 'lucide-react';
+import { auth } from '@/api/firebase';
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+import { Plus, Trash2, Eye, MessageSquare, Folder, Star, Pencil, X, Check, LogOut, Lock, Mail, Loader2, AlertCircle, RefreshCw, Link2 } from 'lucide-react';
 
-const PASSWORD = 'bohemian2030';
+const SITE_BASE = import.meta.env.BASE_URL || '/';
+
+function Toast({ toast, onDismiss }) {
+  const bg = toast.type === 'error'
+    ? 'bg-red-600'
+    : toast.type === 'success'
+      ? 'bg-emerald-600'
+      : 'bg-[#3D2B1E]';
+
+  useEffect(() => {
+    const t = setTimeout(() => onDismiss(toast.id), 4000);
+    return () => clearTimeout(t);
+  }, [toast.id, onDismiss]);
+
+  return (
+    <div className={`${bg} text-white px-5 py-3 rounded-xl shadow-lg font-inter text-sm flex items-center gap-3 min-w-[280px] animate-slide-up`}>
+      {toast.type === 'error' && <AlertCircle size={16} className="flex-shrink-0" />}
+      <span className="flex-1">{toast.message}</span>
+      <button onClick={() => onDismiss(toast.id)} className="opacity-60 hover:opacity-100"><X size={14} /></button>
+    </div>
+  );
+}
+
+function ToastContainer({ toasts, onDismiss }) {
+  if (toasts.length === 0) return null;
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+      {toasts.map(t => <Toast key={t.id} toast={t} onDismiss={onDismiss} />)}
+    </div>
+  );
+}
+
+let toastIdCounter = 0;
 
 const EMPTY_PROJECT = { title: '', category: 'Residential', location: '', year: '', description: '', cover_image: '', featured: false };
 
 export default function Admin() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem('bh_admin') === '1');
-  const [pw, setPw] = useState('');
-  const [pwError, setPwError] = useState(false);
+  const [user, setUser] = useState(undefined);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   const [tab, setTab] = useState('projects');
   const [projects, setProjects] = useState([]);
   const [messages, setMessages] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
   const [projectForm, setProjectForm] = useState(EMPTY_PROJECT);
   const [editingId, setEditingId] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = useCallback((message, type = 'success') => {
+    const id = ++toastIdCounter;
+    setToasts(prev => [...prev, { id, message, type }]);
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
 
   useEffect(() => {
-    if (!authed) return;
-    base44.entities.Project.list('-created_date', 100).then(setProjects);
-    base44.entities.ContactMessage.list('-created_date', 100).then(setMessages);
-    base44.entities.Testimonial.list('-created_date', 100).then(setTestimonials);
-  }, [authed]);
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return unsub;
+  }, []);
 
-  const login = (e) => {
-    e.preventDefault();
-    if (pw === PASSWORD) {
-      sessionStorage.setItem('bh_admin', '1');
-      setAuthed(true);
-    } else {
-      setPwError(true);
-      setTimeout(() => setPwError(false), 2000);
+  const loadData = useCallback(async () => {
+    setDataLoading(true);
+    setDataError(null);
+    try {
+      const [p, m, t] = await Promise.all([
+        base44.entities.Project.list('-created_date', 100),
+        base44.entities.ContactMessage.list('-created_date', 100),
+        base44.entities.Testimonial.list('-created_date', 100),
+      ]);
+      setProjects(p);
+      setMessages(m);
+      setTestimonials(t);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setDataError('Failed to load data. Check your internet connection and try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) loadData();
+  }, [user, loadData]);
+
+  const getAuthErrorMessage = (code) => {
+    switch (code) {
+      case 'auth/invalid-email': return 'Invalid email address.';
+      case 'auth/user-disabled': return 'This account has been disabled.';
+      case 'auth/user-not-found': return 'No account found with this email.';
+      case 'auth/wrong-password': return 'Incorrect password.';
+      case 'auth/invalid-credential': return 'Invalid email or password.';
+      case 'auth/too-many-requests': return 'Too many failed attempts. Please try again later.';
+      case 'auth/network-request-failed': return 'Network error. Check your internet connection.';
+      default: return 'Login failed. Please try again.';
     }
   };
 
-  const logout = () => {
-    sessionStorage.removeItem('bh_admin');
-    setAuthed(false);
+  const login = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    if (!email.trim() || !password.trim()) {
+      setLoginError('Please enter both email and password.');
+      return;
+    }
+    setLoginLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+    } catch (err) {
+      setLoginError(getAuthErrorMessage(err.code));
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setProjectForm(f => ({ ...f, cover_image: file_url }));
-    setUploading(false);
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail.trim());
+      setResetSent(true);
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
+        addToast('No account found with this email.', 'error');
+      } else {
+        addToast('Failed to send reset email. Try again.', 'error');
+      }
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setProjects([]);
+      setMessages([]);
+      setTestimonials([]);
+    } catch {
+      addToast('Failed to log out. Try again.', 'error');
+    }
   };
 
   const openAdd = () => {
@@ -61,44 +177,110 @@ export default function Admin() {
 
   const openEdit = (project) => {
     setEditingId(project.id);
-    setProjectForm({ title: project.title, category: project.category, location: project.location || '', year: project.year || '', description: project.description || '', cover_image: project.cover_image || '', featured: project.featured || false });
+    setProjectForm({
+      title: project.title,
+      category: project.category,
+      location: project.location || '',
+      year: project.year || '',
+      description: project.description || '',
+      cover_image: project.cover_image || '',
+      featured: project.featured || false,
+    });
     setShowForm(true);
   };
 
   const saveProject = async () => {
-    if (!projectForm.title) return;
-    if (editingId) {
-      const updated = await base44.entities.Project.update(editingId, projectForm);
-      setProjects(prev => prev.map(p => p.id === editingId ? updated : p));
-    } else {
-      const p = await base44.entities.Project.create(projectForm);
-      setProjects(prev => [p, ...prev]);
+    if (!projectForm.title.trim()) {
+      addToast('Project title is required.', 'error');
+      return;
     }
-    setShowForm(false);
-    setEditingId(null);
-    setProjectForm(EMPTY_PROJECT);
+    setSaving(true);
+    try {
+      if (editingId) {
+        const updated = await base44.entities.Project.update(editingId, projectForm);
+        setProjects(prev => prev.map(p => p.id === editingId ? { ...p, ...updated } : p));
+        addToast('Project updated.');
+      } else {
+        const p = await base44.entities.Project.create(projectForm);
+        setProjects(prev => [p, ...prev]);
+        addToast('Project created.');
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setProjectForm(EMPTY_PROJECT);
+    } catch {
+      addToast('Failed to save project. Try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const deleteProject = async (id) => {
-    if (!confirm('Delete this project?')) return;
-    await base44.entities.Project.delete(id);
-    setProjects(prev => prev.filter(p => p.id !== id));
+    if (!confirm('Delete this project? This action cannot be undone.')) return;
+    try {
+      await base44.entities.Project.delete(id);
+      setProjects(prev => prev.filter(p => p.id !== id));
+      addToast('Project deleted.');
+    } catch {
+      addToast('Failed to delete project.', 'error');
+    }
+  };
+
+  const toggleFeatured = async (project) => {
+    try {
+      const updated = await base44.entities.Project.update(project.id, { featured: !project.featured });
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, ...updated } : p));
+      addToast(project.featured ? 'Removed from homepage.' : 'Added to homepage.');
+    } catch {
+      addToast('Failed to update project.', 'error');
+    }
   };
 
   const markRead = async (msg) => {
-    await base44.entities.ContactMessage.update(msg.id, { status: 'read' });
-    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'read' } : m));
+    try {
+      await base44.entities.ContactMessage.update(msg.id, { status: 'read' });
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'read' } : m));
+    } catch {
+      addToast('Failed to mark message as read.', 'error');
+    }
   };
 
   const deleteMessage = async (id) => {
-    await base44.entities.ContactMessage.delete(id);
-    setMessages(prev => prev.filter(m => m.id !== id));
+    if (!confirm('Delete this message?')) return;
+    try {
+      await base44.entities.ContactMessage.delete(id);
+      setMessages(prev => prev.filter(m => m.id !== id));
+      addToast('Message deleted.');
+    } catch {
+      addToast('Failed to delete message.', 'error');
+    }
   };
 
+  const deleteTestimonial = async (id) => {
+    if (!confirm('Delete this testimonial?')) return;
+    try {
+      await base44.entities.Testimonial.delete(id);
+      setTestimonials(prev => prev.filter(t => t.id !== id));
+      addToast('Testimonial deleted.');
+    } catch {
+      addToast('Failed to delete testimonial.', 'error');
+    }
+  };
+
+  // Auth state still loading
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen bg-[#1A110A] flex items-center justify-center">
+        <Loader2 size={32} className="text-[#A05035] animate-spin" />
+      </div>
+    );
+  }
+
   // ─── LOGIN SCREEN ───
-  if (!authed) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-[#1A110A] flex items-center justify-center px-4">
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-full bg-[#A05035]/20 border border-[#A05035]/40 flex items-center justify-center mx-auto mb-4">
@@ -107,21 +289,114 @@ export default function Admin() {
             <h1 className="font-cormorant text-3xl text-[#F5EFE6] mb-1">Bohemian House</h1>
             <p className="font-inter text-xs text-[#B88D6A] tracking-widest uppercase">Admin Dashboard</p>
           </div>
-          <form onSubmit={login} className="bg-[#2A1E14] rounded-2xl p-8 border border-[#3D2B1E]">
-            <label className="font-inter text-xs text-[#B88D6A] uppercase tracking-widest mb-2 block">Password</label>
-            <input
-              type="password"
-              value={pw}
-              onChange={e => setPw(e.target.value)}
-              placeholder="Enter password"
-              className={`w-full bg-[#1A110A] border rounded-xl px-4 py-3 font-inter text-sm text-[#F5EFE6] focus:outline-none mb-4 transition-colors ${pwError ? 'border-red-500' : 'border-[#3D2B1E] focus:border-[#A05035]'}`}
-            />
-            {pwError && <p className="text-red-400 text-xs font-inter mb-3">Wrong password. Try again.</p>}
-            <button type="submit" className="w-full bg-[#A05035] text-[#F5EFE6] font-inter text-sm tracking-widest uppercase py-3 rounded-full hover:bg-[#7C563D] transition-colors">
-              Enter
-            </button>
-          </form>
-          <p className="text-center font-inter text-xs text-[#5C3D2A] mt-6">Password: <span className="text-[#B88D6A]">bohemian2030</span></p>
+
+          {showReset ? (
+            <div className="bg-[#2A1E14] rounded-2xl p-8 border border-[#3D2B1E]">
+              {resetSent ? (
+                <div className="text-center">
+                  <Mail size={32} className="text-[#A05035] mx-auto mb-4" />
+                  <p className="font-inter text-sm text-[#F5EFE6] mb-2">Reset email sent!</p>
+                  <p className="font-inter text-xs text-[#B88D6A] mb-6">Check your inbox and follow the link to reset your password.</p>
+                  <button onClick={() => { setShowReset(false); setResetSent(false); setResetEmail(''); }}
+                    className="font-inter text-xs text-[#A05035] hover:underline">
+                    Back to login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handlePasswordReset}>
+                  <p className="font-inter text-sm text-[#F5EFE6] mb-4">Enter your admin email to receive a password reset link.</p>
+                  <label className="font-inter text-xs text-[#B88D6A] uppercase tracking-widest mb-2 block">Email</label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={e => setResetEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                    className="w-full bg-[#1A110A] border border-[#3D2B1E] rounded-xl px-4 py-3 font-inter text-sm text-[#F5EFE6] focus:outline-none focus:border-[#A05035] mb-4"
+                    autoComplete="email"
+                    disabled={resetLoading}
+                  />
+                  <button type="submit" disabled={resetLoading || !resetEmail.trim()}
+                    className="w-full bg-[#A05035] text-[#F5EFE6] font-inter text-sm tracking-widest uppercase py-3 rounded-full hover:bg-[#7C563D] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-4">
+                    {resetLoading && <Loader2 size={16} className="animate-spin" />}
+                    Send Reset Link
+                  </button>
+                  <button type="button" onClick={() => { setShowReset(false); setResetEmail(''); }}
+                    className="w-full font-inter text-xs text-[#B88D6A] hover:text-[#F5EFE6] transition-colors">
+                    Back to login
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={login} className="bg-[#2A1E14] rounded-2xl p-8 border border-[#3D2B1E]">
+              <label className="font-inter text-xs text-[#B88D6A] uppercase tracking-widest mb-2 block">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setLoginError(''); }}
+                placeholder="admin@example.com"
+                className={`w-full bg-[#1A110A] border rounded-xl px-4 py-3 font-inter text-sm text-[#F5EFE6] focus:outline-none mb-4 transition-colors ${loginError ? 'border-red-500' : 'border-[#3D2B1E] focus:border-[#A05035]'}`}
+                autoComplete="email"
+                disabled={loginLoading}
+              />
+              <label className="font-inter text-xs text-[#B88D6A] uppercase tracking-widest mb-2 block">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setLoginError(''); }}
+                placeholder="Enter password"
+                className={`w-full bg-[#1A110A] border rounded-xl px-4 py-3 font-inter text-sm text-[#F5EFE6] focus:outline-none mb-2 transition-colors ${loginError ? 'border-red-500' : 'border-[#3D2B1E] focus:border-[#A05035]'}`}
+                autoComplete="current-password"
+                disabled={loginLoading}
+              />
+              <div className="flex justify-end mb-4">
+                <button type="button" onClick={() => { setShowReset(true); setResetEmail(email); setLoginError(''); }}
+                  className="font-inter text-xs text-[#B88D6A] hover:text-[#A05035] transition-colors">
+                  Forgot password?
+                </button>
+              </div>
+              {loginError && (
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-4">
+                  <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
+                  <p className="text-red-400 text-xs font-inter">{loginError}</p>
+                </div>
+              )}
+              <button type="submit" disabled={loginLoading}
+                className="w-full bg-[#A05035] text-[#F5EFE6] font-inter text-sm tracking-widest uppercase py-3 rounded-full hover:bg-[#7C563D] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {loginLoading && <Loader2 size={16} className="animate-spin" />}
+                Sign In
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── LOADING STATE ───
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-[#F0EBE0] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 size={32} className="text-[#A05035] animate-spin mx-auto mb-4" />
+          <p className="font-inter text-sm text-[#7C563D]">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── DATA ERROR STATE ───
+  if (dataError) {
+    return (
+      <div className="min-h-screen bg-[#F0EBE0] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <AlertCircle size={40} className="text-red-500 mx-auto mb-4" />
+          <h2 className="font-cormorant text-2xl text-[#3D2B1E] mb-2">Something went wrong</h2>
+          <p className="font-inter text-sm text-[#7C563D] mb-6">{dataError}</p>
+          <button onClick={loadData}
+            className="flex items-center gap-2 bg-[#A05035] text-white font-inter text-sm px-6 py-2.5 rounded-full hover:bg-[#7C563D] transition-colors mx-auto">
+            <RefreshCw size={15} /> Try Again
+          </button>
         </div>
       </div>
     );
@@ -132,11 +407,14 @@ export default function Admin() {
   // ─── DASHBOARD ───
   return (
     <div className="min-h-screen bg-[#F0EBE0]">
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
       {/* Top bar */}
       <div className="bg-[#3D2B1E] text-[#F5EFE6] px-6 py-4 flex items-center justify-between sticky top-0 z-40 shadow-lg">
         <span className="font-cormorant text-xl font-semibold">Bohemian House — Admin</span>
         <div className="flex items-center gap-4">
-          <a href="/" target="_blank" className="font-inter text-xs tracking-widest uppercase text-[#B88D6A] hover:text-white flex items-center gap-1.5">
+          <span className="font-inter text-xs text-[#B88D6A] hidden sm:inline">{user.email}</span>
+          <a href={SITE_BASE} target="_blank" rel="noopener noreferrer" className="font-inter text-xs tracking-widest uppercase text-[#B88D6A] hover:text-white flex items-center gap-1.5">
             <Eye size={13} /> View Site
           </a>
           <button onClick={logout} className="font-inter text-xs tracking-widest uppercase text-[#B88D6A] hover:text-red-400 flex items-center gap-1.5 transition-colors">
@@ -217,17 +495,21 @@ export default function Admin() {
                     className="w-full border border-[#E9DFC6] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#A05035] resize-none bg-[#FAFAF8]" />
                 </div>
 
-                {/* Image upload */}
+                {/* Image URL */}
                 <div className="mb-5">
-                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Cover Image</label>
-                  <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors ${uploading ? 'border-[#A05035] bg-[#A05035]/5' : 'border-[#E9DFC6] hover:border-[#A05035] bg-[#FAFAF8]'}`}>
-                    <Upload size={18} className="text-[#A05035]" />
-                    <span className="font-inter text-sm text-[#7C563D]">{uploading ? 'Uploading...' : 'Click to upload image'}</span>
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                  </label>
+                  <label className="font-inter text-xs text-[#7C563D] uppercase tracking-wider mb-1.5 block">Cover Image URL</label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-2 border border-[#E9DFC6] rounded-xl px-4 py-2.5 bg-[#FAFAF8] focus-within:border-[#A05035]">
+                      <Link2 size={16} className="text-[#A05035] flex-shrink-0" />
+                      <input value={projectForm.cover_image} onChange={e => setProjectForm(f => ({ ...f, cover_image: e.target.value }))}
+                        placeholder="https://images.unsplash.com/photo-..."
+                        className="w-full text-sm focus:outline-none bg-transparent" />
+                    </div>
+                  </div>
+                  <p className="font-inter text-xs text-[#B88D6A] mt-1.5">Paste an image URL from Unsplash, Imgur, or any image host</p>
                   {projectForm.cover_image && (
                     <div className="mt-3 relative inline-block">
-                      <img src={projectForm.cover_image} alt="" className="h-28 rounded-xl object-cover border border-[#E9DFC6]" />
+                      <img src={projectForm.cover_image} alt="" className="h-28 rounded-xl object-cover border border-[#E9DFC6]" onError={e => { e.target.style.display = 'none'; }} />
                       <button onClick={() => setProjectForm(f => ({ ...f, cover_image: '' }))}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600">
                         <X size={11} />
@@ -242,9 +524,10 @@ export default function Admin() {
                 </label>
 
                 <div className="flex gap-3">
-                  <button onClick={saveProject} disabled={!projectForm.title}
+                  <button onClick={saveProject} disabled={!projectForm.title.trim() || saving}
                     className="flex items-center gap-2 bg-[#A05035] text-white font-inter text-sm px-6 py-2.5 rounded-full hover:bg-[#7C563D] transition-colors disabled:opacity-40">
-                    <Check size={15} /> {editingId ? 'Save Changes' : 'Save Project'}
+                    {saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                    {editingId ? 'Save Changes' : 'Save Project'}
                   </button>
                   <button onClick={() => setShowForm(false)}
                     className="border border-[#E9DFC6] text-[#7C563D] font-inter text-sm px-6 py-2.5 rounded-full hover:bg-[#E9DFC6] transition-colors">
@@ -272,10 +555,7 @@ export default function Admin() {
                         <Pencil size={12} /> Edit
                       </button>
                       <button
-                        onClick={async () => {
-                          const updated = await base44.entities.Project.update(project.id, { featured: !project.featured });
-                          setProjects(prev => prev.map(p => p.id === project.id ? updated : p));
-                        }}
+                        onClick={() => toggleFeatured(project)}
                         className={`flex items-center gap-1 text-xs font-inter transition-colors ${ project.featured ? 'text-[#A05035] hover:text-[#7C563D]' : 'text-[#B88D6A] hover:text-[#A05035]' }`}>
                         {project.featured ? '★ On Home' : '☆ Add to Home'}
                       </button>
@@ -340,8 +620,16 @@ export default function Admin() {
                     {Array.from({ length: t.rating || 5 }).map((_, j) => <span key={j} className="text-[#B88D6A] text-sm">★</span>)}
                   </div>
                   <p className="font-cormorant text-lg text-[#3D2B1E] italic mb-4 leading-relaxed">"{t.quote}"</p>
-                  <p className="font-inter text-sm font-semibold text-[#7C563D]">{t.client_name}</p>
-                  <p className="font-inter text-xs text-[#B88D6A]">{t.client_title}</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-inter text-sm font-semibold text-[#7C563D]">{t.client_name}</p>
+                      <p className="font-inter text-xs text-[#B88D6A]">{t.client_title}</p>
+                    </div>
+                    <button onClick={() => deleteTestimonial(t.id)}
+                      className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-inter transition-colors">
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </div>
                 </div>
               ))}
               {testimonials.length === 0 && <div className="col-span-2 text-center py-24 bg-white rounded-2xl border border-dashed border-[#E9DFC6]"><p className="font-cormorant text-2xl text-[#B88D6A]">No testimonials yet.</p></div>}

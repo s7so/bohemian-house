@@ -8,7 +8,7 @@ A React SPA for Bohemian House, an eco-friendly interior design studio based in 
 
 - React 18 + Vite
 - Tailwind CSS + Framer Motion
-- Firebase (Firestore + Storage)
+- Firebase (Auth + Firestore)
 - GitHub Pages (auto-deploy via GitHub Actions)
 
 ## Getting Started
@@ -24,8 +24,8 @@ npm install
 ### 2. Set up Firebase
 
 1. Go to [Firebase Console](https://console.firebase.google.com/) → Create a project
-2. Enable **Firestore Database** (start in test mode)
-3. Enable **Storage** (start in test mode)
+2. Enable **Authentication** → Sign-in method → **Email/Password** → Enable
+3. Enable **Firestore Database** (start in test mode, then deploy `firestore.rules`)
 4. Go to Project Settings → General → Add a **Web app** → copy the config
 5. Copy `.env.example` to `.env` and fill in your Firebase config:
 
@@ -39,7 +39,13 @@ cp .env.example .env
 node scripts/seed-firestore.js
 ```
 
-### 4. Run locally
+### 4. Create an admin account
+
+```bash
+node scripts/create-admin.js admin@example.com YourSecurePassword
+```
+
+### 5. Run locally
 
 ```bash
 npm run dev
@@ -49,12 +55,19 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## Admin Dashboard
 
-Go to `/admin` to manage:
+Go to `/admin` and sign in with your Firebase admin email/password.
+
+Features:
 - **Projects** — add, edit, delete, mark as featured
 - **Messages** — view contact form submissions, mark as read
 - **Testimonials** — manage client reviews
 
-Password: `bohemian2030`
+### Security
+
+- Admin authentication via Firebase Auth (Email/Password)
+- Firestore rules: public read, authenticated write only
+- Image URLs instead of file upload (no paid Storage plan needed)
+- Password reset via email
 
 ## Deployment
 

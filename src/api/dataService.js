@@ -11,8 +11,7 @@ import {
   limit as firestoreLimit,
   serverTimestamp,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db } from './firebase';
 
 function mapDoc(docSnap) {
   return { id: docSnap.id, ...docSnap.data() };
@@ -62,13 +61,6 @@ async function deleteDocument(collectionName, id) {
   await deleteDoc(doc(db, collectionName, id));
 }
 
-async function uploadFile(file) {
-  const fileRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-  await uploadBytes(fileRef, file);
-  const url = await getDownloadURL(fileRef);
-  return { file_url: url };
-}
-
 function createEntityProxy(collectionName) {
   return {
     list: (orderField, maxItems) => listCollection(collectionName, orderField, maxItems),
@@ -88,7 +80,7 @@ export const dataService = {
   },
   integrations: {
     Core: {
-      UploadFile: ({ file }) => uploadFile(file),
+      UploadFile: () => { throw new Error('File upload not available. Use image URL instead.'); },
     },
   },
 };
